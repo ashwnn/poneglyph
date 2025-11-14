@@ -18,6 +18,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      {/* set icon */}
+      <link rel="icon" href="/poneglyph.png" />
       <body className={inter.className}>
         <Providers>{children}</Providers>
         <Toaster 
