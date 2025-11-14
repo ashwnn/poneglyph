@@ -38,6 +38,13 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, name } = await request.json();
 
+    if (process.env.ALLOW_REGISTRATION === 'false') {
+      return NextResponse.json(
+        { error: 'User registration is disabled' },
+        { status: 403 }
+      );
+    }
+
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
