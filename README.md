@@ -1,6 +1,6 @@
 # Poneglyph
 
-![cover.png](Poneglyph)
+![cover.png](cover.png)
 
 Poneglyph is an AI powered document search and chat platform built with Next.js. It integrates the [Gemini File Search API](https://ai.google.dev/gemini-api/docs/file-search) to deliver Retrieval Augmented Generation, allowing users to upload documents, build searchable stores, and chat with an AI assistant that provides citations.
 
