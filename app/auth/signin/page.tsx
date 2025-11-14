@@ -41,6 +41,7 @@ export default function SignIn() {
     <div className="min-h-screen flex items-center justify-center bg-[#111] px-4">
       <div className="max-w-md w-full bg-[#2a2a2a] border border-gray-700 p-8 rounded-lg shadow-2xl space-y-6">
         <div className="text-center">
+          <img src="/poneglyph.png" alt="Poneglyph Logo" className="mx-auto h-24 w-auto mb-4" />
           <h2 className="text-2xl font-semibold text-white">
             Sign in to Poneglyph
           </h2>
