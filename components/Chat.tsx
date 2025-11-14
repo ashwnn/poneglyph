@@ -39,8 +39,18 @@ export default function Chat({
       loadConversationHistory();
     } else {
       setMessages([]);
+      setInput('');
+      setError(null);
+      setLoading(false);
     }
   }, [conversationId]);
+
+  useEffect(() => {
+    // Clear error when stores are selected/changed
+    if (storeNames.length > 0 && error?.includes('select at least one store')) {
+      setError(null);
+    }
+  }, [storeNames]);
 
   const loadConversationHistory = async () => {
     if (!conversationId) return;

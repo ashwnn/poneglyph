@@ -39,6 +39,7 @@ export default function Home() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [conversationRefreshTrigger, setConversationRefreshTrigger] = useState(0);
   const [totalConversations, setTotalConversations] = useState(0);
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -97,13 +98,22 @@ export default function Home() {
     setUploadStore(store);
   };
 
+  const handleSelectConversation = (id: string | null) => {
+    setSelectedConversationId(id);
+    if (id !== null) {
+      setShowChat(true);
+    }
+  };
+
   const handleNewConversation = () => {
     setSelectedConversationId(null);
+    setShowChat(true);
   };
 
   const handleConversationCreated = (id: string) => {
     setSelectedConversationId(id);
     setConversationRefreshTrigger((prev) => prev + 1);
+    setShowChat(true);
   };
 
   if (status === 'loading') {
@@ -149,10 +159,11 @@ export default function Home() {
         {/* Middle: Chat or Onboarding */}
         <div className="flex-1 flex flex-col p-4 min-w-0 relative z-0 bg-[#222]">
           <div className="flex-1 min-h-0">
-            {totalConversations === 0 && !selectedConversationId ? (
+            {totalConversations === 0 && !selectedConversationId && !showChat ? (
               <Onboarding />
             ) : (
               <Chat
+                key={`${selectedConversationId || 'new'}`}
                 conversationId={selectedConversationId}
                 storeNames={selectedStoreNames}
                 instructions={settings.globalInstructions}
@@ -166,7 +177,7 @@ export default function Home() {
         {/* Right Sidebar: Conversation List */}
         <div className="w-80 border-l border-gray-700 flex-shrink-0 relative z-10 bg-[#1a1a1a]">
           <ConversationList
-            onSelectConversation={setSelectedConversationId}
+            onSelectConversation={handleSelectConversation}
             selectedConversationId={selectedConversationId}
             onNewConversation={handleNewConversation}
             refreshTrigger={conversationRefreshTrigger}
