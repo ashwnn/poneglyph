@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Copy, Check } from 'lucide-react';
+import { Send, Copy, Check, FileText, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ChatMessage, Citation } from '@/types';
@@ -28,11 +28,18 @@ export default function Chat({
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [expandedCitations, setExpandedCitations] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages, loading]);
 
   useEffect(() => {
     if (conversationId) {
@@ -139,125 +146,186 @@ export default function Chat({
     }
   };
 
+  const toggleCitations = (messageId: string) => {
+    setExpandedCitations((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   if (loadingHistory) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#2a2a2a] rounded-lg border border-gray-700 ">
+      <div className="w-full h-full flex items-center justify-center bg-[#2a2a2a] rounded-xl border border-gray-700/50 shadow-lg">
         <div className="text-center text-gray-400">
-          <div className="w-8 h-8 border-4 border-[#b82c3b] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p>Loading conversation...</p>
+          <div className="w-10 h-10 border-3 border-[#b82c3b] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm">Loading conversation...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#2a2a2a] rounded-lg border border-gray-700 ">
-      <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-gradient-to-b from-[#2a2a2a] to-[#252525] rounded-xl border border-gray-700/50 shadow-lg overflow-hidden">
+      {/* Header Section */}
+      <div className="flex-shrink-0 px-4 py-3 border-b border-gray-700/50 bg-[#2a2a2a]/80 backdrop-blur-sm">
         {storeNames.length > 0 && (
-          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-700">
-            <span className="text-xs text-gray-400">Active stores:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">Searching:</span>
             {storeNames.map((name) => (
               <span
                 key={name}
-                className="px-2 py-0.5 text-xs font-medium bg-[#b82c3b]/20 text-[#ff6b7a] rounded border border-[#b82c3b]/30"
+                className="px-2.5 py-1 text-xs font-medium bg-gradient-to-r from-[#b82c3b]/20 to-[#b82c3b]/10 text-[#ff6b7a] rounded-full border border-[#b82c3b]/30"
               >
-                {name}
+                {name.split('/').pop() || name}
               </span>
             ))}
           </div>
         )}
 
         {instructions && (
-          <div className="pb-2 border-b border-gray-700">
-            <p className="text-xs text-gray-400 mb-1">Global instructions active</p>
-          </div>
+          <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            Global instructions active
+          </p>
         )}
+      </div>
 
-        {error && (
-          <div className="p-3 bg-red-900/20 border border-red-800 rounded text-sm text-red-400">
-            {error}
-          </div>
-        )}
+      {/* Error Display */}
+      {error && (
+        <div className="mx-4 mt-3 p-3 bg-red-900/20 border border-red-800/50 rounded-lg text-sm text-red-400 animate-fade-in">
+          {error}
+        </div>
+      )}
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="space-y-4">
-            {messages.length === 0 ? (
-              <div className="text-center text-gray-400 py-8">
-                <p>Start a conversation by selecting stores and sending a message.</p>
+      {/* Messages Container */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-4 chat-scroll-container"
+      >
+        <div className="space-y-4 max-w-4xl mx-auto">
+          {messages.length === 0 ? (
+            <div className="text-center text-gray-500 py-16 animate-fade-in">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#333] flex items-center justify-center">
+                <Send className="w-7 h-7 text-gray-600" />
               </div>
-            ) : (
-              messages.map((message) => (
+              <p className="text-lg font-medium text-gray-400 mb-2">Start a conversation</p>
+              <p className="text-sm">Select stores from the sidebar and send a message to begin.</p>
+            </div>
+          ) : (
+            messages.map((message, index) => (
+              <div
+                key={message.id}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-message-in`}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
                 <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-3  ${
-                      message.role === 'user'
-                        ? 'bg-[#b82c3b] text-white'
-                        : 'bg-[#333] text-white'
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 message-bubble ${message.role === 'user'
+                      ? 'bg-gradient-to-br from-[#b82c3b] to-[#9a2431] text-white rounded-br-md'
+                      : 'bg-[#333] text-white rounded-bl-md border border-gray-700/30'
                     }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      {message.role === 'assistant' ? (
-                        <div className="text-sm prose prose-invert prose-sm max-w-none flex-1">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
+                >
+                  {/* Message Content */}
+                  <div className="flex items-start justify-between gap-3">
+                    {message.role === 'assistant' ? (
+                      <div className="text-sm prose prose-invert prose-sm max-w-none flex-1 leading-relaxed">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap flex-1 leading-relaxed">{message.content}</p>
+                    )}
+                    <button
+                      onClick={() => handleCopy(message.content, message.id)}
+                      className="p-1.5 hover:bg-black/20 rounded-lg transition-all flex-shrink-0 opacity-60 hover:opacity-100"
+                      aria-label="Copy message"
+                    >
+                      {copiedId === message.id ? (
+                        <Check className="w-3.5 h-3.5" />
                       ) : (
-                        <p className="text-sm whitespace-pre-wrap flex-1">{message.content}</p>
+                        <Copy className="w-3.5 h-3.5" />
                       )}
+                    </button>
+                  </div>
+
+                  {/* Timestamp */}
+                  <div className={`flex items-center gap-1.5 mt-2 text-xs ${message.role === 'user' ? 'text-white/60' : 'text-gray-500'
+                    }`}>
+                    <Clock className="w-3 h-3" />
+                    {formatTime(message.timestamp)}
+                  </div>
+
+                  {/* Citations */}
+                  {message.citations && message.citations.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-600/50">
                       <button
-                        onClick={() => handleCopy(message.content, message.id)}
-                        className="p-1 hover:bg-black/20 rounded transition-all flex-shrink-0"
-                        aria-label="Copy message"
+                        onClick={() => toggleCitations(message.id)}
+                        className="flex items-center gap-2 text-xs font-medium text-[#ff6b7a] hover:text-[#ff8a96] transition-colors"
                       >
-                        {copiedId === message.id ? (
-                          <Check className="w-3 h-3" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
+                        <FileText className="w-3.5 h-3.5" />
+                        {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
+                        <span className="text-gray-500 text-xs">
+                          {expandedCitations.has(message.id) ? '(hide)' : '(show)'}
+                        </span>
                       </button>
-                    </div>
-                    {message.citations && message.citations.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gray-600">
-                        <p className="text-xs font-medium mb-1">Sources:</p>
-                        <div className="space-y-1">
+
+                      {expandedCitations.has(message.id) && (
+                        <div className="mt-2 space-y-2 animate-fade-in">
                           {message.citations.map((citation, idx) => (
-                            <div key={idx} className="text-xs opacity-90">
-                              <span className="font-medium">{citation.fileName}</span>
+                            <div
+                              key={idx}
+                              className="p-2.5 bg-[#222] rounded-lg border border-gray-700/50 citation-card"
+                            >
+                              <p className="text-xs font-medium text-[#ff6b7a] mb-1 truncate">
+                                {citation.fileName}
+                              </p>
                               {citation.snippet && (
-                                <span className="ml-2 opacity-75">— {citation.snippet}</span>
+                                <p className="text-xs text-gray-400 line-clamp-2">
+                                  {citation.snippet}
+                                </p>
                               )}
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-[#333] rounded-lg p-3 ">
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      )}
                     </div>
-                    <p className="text-sm text-gray-300">Thinking...</p>
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
+            ))
+          )}
 
-        <div className="flex gap-2 pt-2 border-t border-gray-700">
+          {/* Loading Indicator */}
+          {loading && (
+            <div className="flex justify-start animate-message-in">
+              <div className="bg-[#333] rounded-2xl rounded-bl-md px-4 py-3 border border-gray-700/30">
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-[#b82c3b] rounded-full typing-dot" />
+                    <div className="w-2 h-2 bg-[#b82c3b] rounded-full typing-dot" />
+                    <div className="w-2 h-2 bg-[#b82c3b] rounded-full typing-dot" />
+                  </div>
+                  <span className="text-sm text-gray-400">Thinking...</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Input Section */}
+      <div className="flex-shrink-0 p-4 border-t border-gray-700/50 bg-[#2a2a2a]/80 backdrop-blur-sm">
+        <div className="flex gap-3 max-w-4xl mx-auto chat-input-container rounded-xl border border-gray-600/50 bg-[#333] p-1">
           <input
             type="text"
             value={input}
@@ -268,21 +336,24 @@ export default function Chat({
                 handleSend();
               }
             }}
-            placeholder="Type your message..."
+            placeholder={storeNames.length === 0 ? "Select a store to start chatting..." : "Type your message..."}
             disabled={loading || storeNames.length === 0}
-            className="flex-1 px-3 py-2 border border-gray-600 rounded-md bg-[#333] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#b82c3b] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed "
+            className="flex-1 px-4 py-2.5 bg-transparent text-white placeholder-gray-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             aria-label="Chat input"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim() || storeNames.length === 0}
-            className="px-4 py-2 bg-[#b82c3b] hover:bg-[#a02634] text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed "
+            className="px-5 py-2.5 bg-gradient-to-r from-[#b82c3b] to-[#a02634] hover:from-[#c93545] hover:to-[#b82c3b] text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium shadow-lg shadow-[#b82c3b]/20"
             aria-label="Send message"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <Send className="w-4 h-4" />
+              <>
+                <Send className="w-4 h-4" />
+                <span className="hidden sm:inline">Send</span>
+              </>
             )}
           </button>
         </div>

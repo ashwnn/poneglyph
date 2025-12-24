@@ -75,10 +75,10 @@ export async function POST(request: NextRequest) {
     });
 
     const ai = getGeminiClient(apiKey);
-    
+
     // Build contents array
     const contents: any[] = [];
-    
+
     // Add global instructions if provided
     if (instructions && typeof instructions === 'string' && instructions.trim()) {
       contents.push({
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         parts: [{ text: `System Instructions: ${instructions}` }],
       });
     }
-    
+
     // Add user message
     contents.push({
       role: 'user',
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     const fileSearchConfig: any = {
       fileSearchStoreNames: storeNames,
     };
-    
+
     if (metadataFilter && typeof metadataFilter === 'string' && metadataFilter.trim()) {
       fileSearchConfig.metadataFilter = metadataFilter;
     }
@@ -117,24 +117,47 @@ export async function POST(request: NextRequest) {
     const citations: any[] = [];
     const candidate = response.candidates?.[0];
     const groundingMetadata = candidate?.groundingMetadata;
-    
+
     if (groundingMetadata?.groundingChunks) {
       for (const chunk of groundingMetadata.groundingChunks) {
         if (chunk.retrievedContext) {
           const context = chunk.retrievedContext;
+          // Extract filename from documentUri (e.g., "corpora/xxx/documents/yyy" -> document name)
+          const documentUri = (context as any).documentUri || (context as any).uri || '';
+          const title = (context as any).title || '';
+
+          // Try to get a clean filename - prioritize title, then extract from URI
+          let fileName = title;
+          if (!fileName && documentUri) {
+            // Extract last segment of the URI path as filename
+            const uriParts = documentUri.split('/');
+            fileName = uriParts[uriParts.length - 1] || 'Unknown source';
+          }
+          fileName = fileName || 'Unknown source';
+
           citations.push({
-            fileName: context.title || context.uri || 'Unknown source',
-            snippet: context.uri || context.title,
-            page: (context as any).pageNumber || 1,
+            fileName,
+            snippet: (context as any).snippet || (context as any).text || '',
           });
         } else if (chunk.web) {
           citations.push({
-            fileName: chunk.web.uri || 'Unknown source',
-            snippet: chunk.web.title,
+            fileName: chunk.web.title || chunk.web.uri || 'Web source',
+            snippet: chunk.web.uri || '',
           });
         }
       }
     }
+
+    // Deduplicate citations by fileName
+    const uniqueCitations = citations.reduce((acc: any[], citation) => {
+      const existing = acc.find(c => c.fileName === citation.fileName);
+      if (!existing) {
+        acc.push(citation);
+      } else if (citation.snippet && !existing.snippet) {
+        existing.snippet = citation.snippet;
+      }
+      return acc;
+    }, []);
 
     // Save assistant message
     await prisma.message.create({
@@ -142,7 +165,7 @@ export async function POST(request: NextRequest) {
         conversationId: conversation.id,
         role: 'assistant',
         content: text,
-        citations: citations.length > 0 ? citations : undefined,
+        citations: uniqueCitations.length > 0 ? uniqueCitations : undefined,
       },
     });
 
@@ -154,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       text,
-      citations: citations.length > 0 ? citations : undefined,
+      citations: uniqueCitations.length > 0 ? uniqueCitations : undefined,
       conversationId: conversation.id,
     });
   } catch (error: any) {

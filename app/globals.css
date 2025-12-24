@@ -185,5 +185,116 @@ body {
   color: #fff;
 }
 
+/* Chat Message Animations */
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+@keyframes messageFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes typingDots {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-message-in {
+  animation: messageSlideIn 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: messageFadeIn 0.2s ease-out forwards;
+}
+
+.typing-dot {
+  animation: typingDots 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0ms; }
+.typing-dot:nth-child(2) { animation-delay: 160ms; }
+.typing-dot:nth-child(3) { animation-delay: 320ms; }
+
+/* Chat Input Focus Animation */
+.chat-input-container {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.chat-input-container:focus-within {
+  box-shadow: 0 0 0 2px rgba(184, 44, 59, 0.3);
+}
+
+/* Citation Styling */
+.citation-card {
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.citation-card:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateX(2px);
+}
+
+/* Smooth Scroll */
+.chat-scroll-container {
+  scroll-behavior: smooth;
+}
+
+/* Message Bubble Improvements */
+.message-bubble {
+  transition: box-shadow 0.2s ease;
+}
+
+.message-bubble:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* File Upload Drop Zone */
+@keyframes dropZonePulse {
+  0%, 100% {
+    border-color: rgba(184, 44, 59, 0.4);
+    background-color: rgba(184, 44, 59, 0.05);
+  }
+  50% {
+    border-color: rgba(184, 44, 59, 0.8);
+    background-color: rgba(184, 44, 59, 0.1);
+  }
+}
+
+.drop-zone-active {
+  animation: dropZonePulse 1s ease-in-out infinite;
+}
+
+/* Scrollbar Styling */
+.chat-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.chat-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
 
