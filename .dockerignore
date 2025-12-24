@@ -28,7 +28,7 @@ build/
 Thumbs.db
 
 # Prisma
-prisma/migrations/
+# prisma/migrations/
 
 # Testing
 coverage/
