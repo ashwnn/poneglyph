@@ -29,7 +29,25 @@ export async function POST(request: NextRequest) {
 
     const apiKey = decryptApiKey(user.geminiApiKey);
 
-    const { message, storeNames, instructions, metadataFilter, model = 'gemini-2.5-flash', conversationId } = await request.json();
+    const {
+      message,
+      storeNames,
+      instructions,
+      metadataFilter,
+      model: requestedModel = 'gemini-2.5-flash',
+      conversationId
+    } = await request.json();
+
+    // Mapping layer to convert requested names to actual model IDs
+    const modelMapping: Record<string, string> = {
+      'gemini-2.5-flash-lite': 'gemini-1.5-flash-8b',
+      'gemini-2.5-flash': 'gemini-1.5-flash',
+      'gemini-2.5-pro': 'gemini-1.5-pro',
+      'gemini-3.0-flash': 'gemini-2.0-flash-exp',
+      'gemini-3.0-pro': 'gemini-1.5-pro', // Fallback to 1.5 Pro until 2.0 Pro is GA
+    };
+
+    const model = modelMapping[requestedModel] || requestedModel;
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(

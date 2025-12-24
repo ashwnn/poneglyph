@@ -18,6 +18,18 @@ export async function GET() {
     });
 
     if (!settings) {
+      // Verify user exists before creating settings
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { error: 'User does not exist. Please sign in again.' },
+          { status: 401 }
+        );
+      }
+
       // Create default settings
       settings = await prisma.userSettings.create({
         data: {
@@ -54,6 +66,18 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json();
+
+    // Verify user exists before upserting settings
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User does not exist. Please sign in again.' },
+        { status: 401 }
+      );
+    }
 
     const settings = await prisma.userSettings.upsert({
       where: { userId: session.user.id },
