@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { HardDrive, MessageSquare, Upload, Plus } from 'lucide-react';
 import Header from '@/components/Header';
 import StoreManagement from '@/components/StoreManagement';
 import FileUpload from '@/components/FileUpload';
@@ -10,6 +11,7 @@ import Chat from '@/components/Chat';
 import ConversationList from '@/components/ConversationList';
 import Settings from '@/components/Settings';
 import Onboarding from '@/components/Onboarding';
+import Sidebar, { SidebarIconButton } from '@/components/Sidebar';
 import type { FileSearchStore, Settings as SettingsType } from '@/types';
 
 const defaultSettings: SettingsType = {
@@ -40,6 +42,44 @@ export default function Home() {
   const [conversationRefreshTrigger, setConversationRefreshTrigger] = useState(0);
   const [totalConversations, setTotalConversations] = useState(0);
   const [showChat, setShowChat] = useState(false);
+
+  // Sidebar states
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
+
+  // Load sidebar state from localStorage
+  useEffect(() => {
+    const savedLeftState = localStorage.getItem('poneglyph-left-sidebar');
+    const savedRightState = localStorage.getItem('poneglyph-right-sidebar');
+
+    if (savedLeftState !== null) {
+      setLeftSidebarOpen(savedLeftState === 'true');
+    }
+    if (savedRightState !== null) {
+      setRightSidebarOpen(savedRightState === 'true');
+    }
+
+    // Auto-collapse on mobile
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setLeftSidebarOpen(false);
+        setRightSidebarOpen(false);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Save sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('poneglyph-left-sidebar', String(leftSidebarOpen));
+  }, [leftSidebarOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('poneglyph-right-sidebar', String(rightSidebarOpen));
+  }, [rightSidebarOpen]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -81,7 +121,7 @@ export default function Home() {
   const handleSettingsChange = async (newSettings: SettingsType) => {
     setSettings(newSettings);
     setCurrentModel(newSettings.defaultModel);
-    
+
     // Save to database
     try {
       await fetch('/api/settings', {
@@ -96,6 +136,10 @@ export default function Home() {
 
   const handleStoreSelectForUpload = (store: FileSearchStore) => {
     setUploadStore(store);
+    // Expand sidebar if collapsed when upload is triggered
+    if (!leftSidebarOpen) {
+      setLeftSidebarOpen(true);
+    }
   };
 
   const handleSelectConversation = (id: string | null) => {
@@ -141,20 +185,45 @@ export default function Home() {
 
       <main className="h-[calc(100vh-4rem)] flex">
         {/* Left Sidebar: Store Management */}
-        <div className="w-1/5 border-r border-gray-700 overflow-y-auto p-4 space-y-4 flex-shrink-0 bg-[#1a1a1a] relative z-10">
-          <StoreManagement
-            selectedStoreNames={selectedStoreNames}
-            onStoreSelectionChange={setSelectedStoreNames}
-            onStoreSelectForUpload={handleStoreSelectForUpload}
-          />
-
-          {uploadStore && (
-            <FileUpload
-              store={uploadStore}
-              onClose={() => setUploadStore(null)}
+        <Sidebar
+          isOpen={leftSidebarOpen}
+          onToggle={() => setLeftSidebarOpen(!leftSidebarOpen)}
+          side="left"
+          title="File Stores"
+          icon={<HardDrive className="w-4 h-4 text-[#ff6b7a]" />}
+          collapsedContent={
+            <div className="space-y-1">
+              <SidebarIconButton
+                icon={<HardDrive className="w-5 h-5" />}
+                label="File Stores"
+                onClick={() => setLeftSidebarOpen(true)}
+                isActive={selectedStoreNames.length > 0}
+              />
+              <SidebarIconButton
+                icon={<Upload className="w-5 h-5" />}
+                label="Upload Files"
+                onClick={() => {
+                  setLeftSidebarOpen(true);
+                }}
+              />
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <StoreManagement
+              selectedStoreNames={selectedStoreNames}
+              onStoreSelectionChange={setSelectedStoreNames}
+              onStoreSelectForUpload={handleStoreSelectForUpload}
             />
-          )}
-        </div>
+
+            {uploadStore && (
+              <FileUpload
+                store={uploadStore}
+                onClose={() => setUploadStore(null)}
+              />
+            )}
+          </div>
+        </Sidebar>
 
         {/* Middle: Chat or Onboarding */}
         <div className="flex-1 flex flex-col p-4 min-w-0 relative z-0 bg-[#222]">
@@ -175,7 +244,31 @@ export default function Home() {
         </div>
 
         {/* Right Sidebar: Conversation List */}
-        <div className="w-80 border-l border-gray-700 flex-shrink-0 relative z-10 bg-[#1a1a1a]">
+        <Sidebar
+          isOpen={rightSidebarOpen}
+          onToggle={() => setRightSidebarOpen(!rightSidebarOpen)}
+          side="right"
+          title="Conversations"
+          icon={<MessageSquare className="w-4 h-4 text-[#ff6b7a]" />}
+          collapsedContent={
+            <div className="space-y-1">
+              <SidebarIconButton
+                icon={<Plus className="w-5 h-5" />}
+                label="New Conversation"
+                onClick={() => {
+                  handleNewConversation();
+                  setRightSidebarOpen(true);
+                }}
+              />
+              <SidebarIconButton
+                icon={<MessageSquare className="w-5 h-5" />}
+                label="Conversations"
+                onClick={() => setRightSidebarOpen(true)}
+                isActive={selectedConversationId !== null}
+              />
+            </div>
+          }
+        >
           <ConversationList
             onSelectConversation={handleSelectConversation}
             selectedConversationId={selectedConversationId}
@@ -183,7 +276,7 @@ export default function Home() {
             refreshTrigger={conversationRefreshTrigger}
             onConversationCountChange={setTotalConversations}
           />
-        </div>
+        </Sidebar>
       </main>
 
       <Settings

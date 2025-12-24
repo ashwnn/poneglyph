@@ -206,15 +206,9 @@ export default function StoreManagement({
   }, 0);
 
   return (
-    <div className="w-full bg-gradient-to-b from-[#2a2a2a] to-[#252525] rounded-xl border border-gray-700/50 p-4 space-y-4 shadow-lg">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-[#b82c3b]/20">
-            <HardDrive className="w-4 h-4 text-[#ff6b7a]" />
-          </div>
-          <h2 className="text-lg font-semibold text-white">File Stores</h2>
-        </div>
+    <div className="w-full space-y-4">
+      {/* Refresh button - subtle, top right */}
+      <div className="flex justify-end">
         <button
           onClick={loadStores}
           disabled={loading}
@@ -263,8 +257,8 @@ export default function StoreManagement({
             <div
               key={store.name}
               className={`border rounded-xl overflow-hidden transition-all ${selectedStoreNames.includes(store.name)
-                  ? 'border-[#b82c3b]/50 bg-[#b82c3b]/5'
-                  : 'border-gray-700/50 bg-[#333]/50 hover:bg-[#333]'
+                ? 'border-[#b82c3b]/50 bg-[#b82c3b]/5'
+                : 'border-gray-700/50 bg-[#333]/50 hover:bg-[#333]'
                 }`}
             >
               <div className="flex items-center justify-between p-3">
