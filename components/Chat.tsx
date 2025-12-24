@@ -4,14 +4,16 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Copy, Check, FileText, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { ChatMessage, Citation } from '@/types';
+import type { ChatMessage, Citation, Settings as SettingsType } from '@/types';
 import { sendChatMessage } from '@/lib/api';
+
+type ModelType = SettingsType['defaultModel'];
 
 interface ChatProps {
   conversationId: string | null;
   storeNames: string[];
   instructions?: string;
-  model: 'gemini-2.5-flash' | 'gemini-2.5-pro';
+  model: ModelType;
   onConversationCreated?: (id: string) => void;
 }
 
@@ -229,8 +231,8 @@ export default function Chat({
               >
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 message-bubble ${message.role === 'user'
-                      ? 'bg-gradient-to-br from-[#b82c3b] to-[#9a2431] text-white rounded-br-md'
-                      : 'bg-[#333] text-white rounded-bl-md border border-gray-700/30'
+                    ? 'bg-gradient-to-br from-[#b82c3b] to-[#9a2431] text-white rounded-br-md'
+                    : 'bg-[#333] text-white rounded-bl-md border border-gray-700/30'
                     }`}
                 >
                   {/* Message Content */}

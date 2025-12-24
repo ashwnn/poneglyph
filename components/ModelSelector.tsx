@@ -1,13 +1,42 @@
 'use client';
 
-import { ChevronDown, Zap, Brain } from 'lucide-react';
+import { ChevronDown, Zap, Brain, Sparkles, Feather } from 'lucide-react';
+import { Settings } from '@/types';
+
+// Extract the model type from the Settings interface
+type ModelType = Settings['defaultModel'];
 
 interface ModelSelectorProps {
-  model: 'gemini-2.5-flash' | 'gemini-2.5-pro';
-  onModelChange: (model: 'gemini-2.5-flash' | 'gemini-2.5-pro') => void;
+  model: ModelType;
+  onModelChange: (model: ModelType) => void;
 }
 
-const MODEL_INFO = {
+const MODEL_INFO: Record<ModelType, {
+  name: string;
+  speed: string;
+  contextWindow: string;
+  icon: any;
+  color: string;
+  pricing: {
+    input: string;
+    output: string;
+  };
+  description: string;
+  features: string[];
+}> = {
+  'gemini-2.5-flash-lite': {
+    name: 'Gemini 2.5 Flash Lite',
+    speed: 'Ultra Fast',
+    contextWindow: '1M tokens',
+    icon: Feather,
+    color: 'text-green-400',
+    pricing: {
+      input: '$0.05 / 1M tokens',
+      output: '$0.20 / 1M tokens',
+    },
+    description: 'The most cost-effective option for simple tasks and high-volume operations.',
+    features: ['Lowest latency', 'Lowest cost', 'Good for basic queries'],
+  },
   'gemini-2.5-flash': {
     name: 'Gemini 2.5 Flash',
     speed: 'Fast',
@@ -18,8 +47,21 @@ const MODEL_INFO = {
       input: '$0.075 / 1M tokens',
       output: '$0.30 / 1M tokens',
     },
-    description: 'Optimized for speed and efficiency. Best for most use cases.',
+    description: 'Optimized for speed and efficiency. Best for most standard use cases.',
     features: ['Fast responses', 'Cost-effective', 'Large context window'],
+  },
+  'gemini-3.0-flash': {
+    name: 'Gemini 3.0 Flash',
+    speed: 'Fast',
+    contextWindow: '2M tokens',
+    icon: Sparkles,
+    color: 'text-orange-400',
+    pricing: {
+      input: '$0.10 / 1M tokens',
+      output: '$0.40 / 1M tokens',
+    },
+    description: 'Next-generation efficiency with improved reasoning capabilities.',
+    features: ['Enhanced reasoning', '2M context window', 'Multimodal native'],
   },
   'gemini-2.5-pro': {
     name: 'Gemini 2.5 Pro',
@@ -32,71 +74,102 @@ const MODEL_INFO = {
       output: '$5.00 / 1M tokens',
     },
     description: 'Advanced reasoning and complex problem-solving capabilities.',
-    features: ['Advanced reasoning', 'Complex queries', 'Extended context (2M)'],
+    features: ['Advanced reasoning', 'Complex queries', 'Extended context'],
+  },
+  'gemini-3.0-pro': {
+    name: 'Gemini 3.0 Pro',
+    speed: 'Deep',
+    contextWindow: '2M tokens',
+    icon: Brain,
+    color: 'text-blue-400',
+    pricing: {
+      input: '$2.50 / 1M tokens',
+      output: '$10.00 / 1M tokens',
+    },
+    description: 'The most capable model for highly complex reasoning and creative tasks.',
+    features: ['State-of-the-art', 'Best-in-class reasoning', 'Complex analysis'],
   },
 };
 
 export default function ModelSelector({ model, onModelChange }: ModelSelectorProps) {
-  const currentModel = MODEL_INFO[model];
+  const currentModel = MODEL_INFO[model] || MODEL_INFO['gemini-2.5-flash'];
   const Icon = currentModel.icon;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {/* Dropdown */}
       <div className="relative">
         <select
           value={model}
-          onChange={(e) =>
-            onModelChange(e.target.value as 'gemini-2.5-flash' | 'gemini-2.5-pro')
-          }
-          className="w-full px-3 py-2 pr-10 text-sm border border-gray-600 rounded-md bg-[#333] text-white focus:outline-none focus:ring-2 focus:ring-[#b82c3b] focus:border-transparent appearance-none cursor-pointer"
+          onChange={(e) => onModelChange(e.target.value as ModelType)}
+          className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-600 rounded-lg bg-[#333] text-white focus:outline-none focus:ring-2 focus:ring-[#b82c3b] focus:border-transparent appearance-none cursor-pointer hover:bg-[#3a3a3a] transition-colors"
           aria-label="Select model"
         >
-          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-          <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+          {Object.entries(MODEL_INFO).map(([key, info]) => (
+            <option key={key} value={key}>
+              {info.name}
+            </option>
+          ))}
         </select>
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
       </div>
 
       {/* Model Details Card */}
-      <div className="p-3 bg-[#1a1a1a] border border-gray-700 rounded-lg space-y-2">
-        <div className="flex items-center gap-2">
-          <Icon className={`w-4 h-4 ${currentModel.color}`} />
-          <h4 className="text-sm font-semibold text-white">{currentModel.name}</h4>
-        </div>
-
-        <p className="text-xs text-gray-300">{currentModel.description}</p>
-
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="space-y-1">
-            <div className="text-gray-400">Speed</div>
-            <div className="text-white font-medium">{currentModel.speed}</div>
+      <div className="p-4 bg-[#1a1a1a] border border-gray-700/50 rounded-xl space-y-4 shadow-lg">
+        <div className="flex items-center gap-3 pb-2 border-b border-gray-700/50">
+          <div className={`p-2 rounded-lg bg-opacity-20 ${currentModel.color.replace('text-', 'bg-')}`}>
+            <Icon className={`w-5 h-5 ${currentModel.color}`} />
           </div>
-          <div className="space-y-1">
-            <div className="text-gray-400">Context</div>
-            <div className="text-white font-medium">{currentModel.contextWindow}</div>
+          <div>
+            <h4 className="text-sm font-semibold text-white leading-none mb-1">{currentModel.name}</h4>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{currentModel.speed} Model</p>
           </div>
         </div>
 
-        <div className="pt-2 border-t border-gray-700 space-y-1">
-          <div className="text-xs text-gray-400">Pricing (Pay-as-you-go)</div>
-          <div className="text-xs space-y-0.5">
-            <div className="text-gray-300">
-              <span className="text-gray-400">Input:</span> {currentModel.pricing.input}
+        <p className="text-sm text-gray-300 leading-relaxed">
+          {currentModel.description}
+        </p>
+
+        <div className="grid grid-cols-2 gap-3 py-1">
+          <div className="bg-[#222] rounded-lg p-2 border border-gray-800">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Context</div>
+            <div className="text-xs text-white font-medium">{currentModel.contextWindow}</div>
+          </div>
+          <div className="bg-[#222] rounded-lg p-2 border border-gray-800">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Speed</div>
+            <div className={`text-xs font-medium ${currentModel.color}`}>{currentModel.speed}</div>
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <span>Pricing</span>
+            <div className="h-px bg-gray-700 flex-1" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-gray-500">Input</div>
+              <div className="text-xs text-gray-200 font-mono">{currentModel.pricing.input}</div>
             </div>
-            <div className="text-gray-300">
-              <span className="text-gray-400">Output:</span> {currentModel.pricing.output}
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-gray-500">Output</div>
+              <div className="text-xs text-gray-200 font-mono">{currentModel.pricing.output}</div>
             </div>
           </div>
         </div>
 
-        <div className="pt-2 space-y-1">
-          {currentModel.features.map((feature, idx) => (
-            <div key={idx} className="flex items-center gap-1.5 text-xs text-gray-300">
-              <span className="text-[#b82c3b]">•</span>
-              <span>{feature}</span>
-            </div>
-          ))}
+        <div className="space-y-2 pt-2">
+          <div className="flex flex-wrap gap-2">
+            {currentModel.features.map((feature, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center px-2 py-1 rounded-md bg-[#222] border border-gray-700 text-[10px] text-gray-300"
+              >
+                {feature}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

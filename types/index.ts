@@ -39,7 +39,7 @@ export interface Citation {
 
 export interface Settings {
   globalInstructions: string;
-  defaultModel: 'gemini-2.5-flash' | 'gemini-2.5-pro';
+  defaultModel: 'gemini-2.5-flash-lite' | 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-3.0-flash' | 'gemini-3.0-pro';
   preferShorterAnswers: boolean;
   enableCitations: boolean;
   defaultChunking?: ChunkingConfig;
@@ -53,7 +53,7 @@ export interface ChatRequest {
   storeNames: string[];
   instructions?: string;
   metadataFilter?: string;
-  model?: 'gemini-2.5-flash' | 'gemini-2.5-pro';
+  model?: 'gemini-2.5-flash-lite' | 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-3.0-flash' | 'gemini-3.0-pro';
   conversationId?: string;
 }
 

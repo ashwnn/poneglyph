@@ -1,13 +1,17 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { Settings, LogOut, User } from 'lucide-react';
+import { Settings, LogOut, User, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import ModelSelector from './ModelSelector';
+import { Settings as SettingsType } from '@/types';
+
+// Extract ModelType from Settings
+type ModelType = SettingsType['defaultModel'];
 
 interface HeaderProps {
-  model: 'gemini-2.5-flash' | 'gemini-2.5-pro';
-  onModelChange: (model: 'gemini-2.5-flash' | 'gemini-2.5-pro') => void;
+  model: ModelType;
+  onModelChange: (model: ModelType) => void;
   onSettingsOpen: () => void;
 }
 
@@ -48,9 +52,17 @@ export default function Header({ model, onModelChange, onSettingsOpen }: HeaderP
             <div className="relative">
               <button
                 onClick={() => setShowModelSelector(!showModelSelector)}
-                className="px-3 py-1.5 text-sm border border-gray-600 rounded-md bg-[#333] text-white hover:bg-[#3a3a3a] transition-all w-48 text-left"
+                className="px-3 py-1.5 text-sm border border-gray-600 rounded-md bg-[#333] text-white hover:bg-[#3a3a3a] transition-all w-48 text-left truncate flex items-center justify-between"
               >
-                {model === 'gemini-2.5-flash' ? 'Gemini 2.5 Flash' : 'Gemini 2.5 Pro'}
+                <span>
+                  {model === 'gemini-2.5-flash-lite' ? 'Gemini 2.5 Flash Lite' :
+                    model === 'gemini-2.5-flash' ? 'Gemini 2.5 Flash' :
+                      model === 'gemini-3.0-flash' ? 'Gemini 3.0 Flash' :
+                        model === 'gemini-2.5-pro' ? 'Gemini 2.5 Pro' :
+                          model === 'gemini-3.0-pro' ? 'Gemini 3.0 Pro' :
+                            'Select Model'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-gray-400 ml-2" />
               </button>
 
               {/* Model Selector Dropdown */}

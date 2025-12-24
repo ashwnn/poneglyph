@@ -35,7 +35,7 @@ export default function Home() {
   const [selectedStoreNames, setSelectedStoreNames] = useState<string[]>([]);
   const [uploadStore, setUploadStore] = useState<FileSearchStore | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [currentModel, setCurrentModel] = useState<'gemini-2.5-flash' | 'gemini-2.5-pro'>(
+  const [currentModel, setCurrentModel] = useState<SettingsType['defaultModel']>(
     defaultSettings.defaultModel
   );
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
