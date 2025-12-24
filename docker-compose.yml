@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: poneglyph-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-poneglyph}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-poneglyph_password}
+      POSTGRES_DB: ${POSTGRES_DB:-poneglyph}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-poneglyph}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - poneglyph-network
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: poneglyph-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-poneglyph}:${POSTGRES_PASSWORD:-poneglyph_password}@postgres:5432/${POSTGRES_DB:-poneglyph}?schema=public
+      
+      # NextAuth
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      
+      # Encryption
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      
+      # Node Environment
+      NODE_ENV: production
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    networks:
+      - poneglyph-network
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        npx prisma migrate deploy &&
+        echo 'Database migrations completed' &&
+        npm start
+      "
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  poneglyph-network:
+    driver: bridge

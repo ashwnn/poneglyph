@@ -46,7 +46,49 @@ Poneglyph is an AI powered document search and chat platform built with Next.js.
 
 ---
 
-## Installation
+## Docker Deployment
+
+### Quick Start with Docker
+
+The easiest way to run Poneglyph is using Docker:
+
+```sh
+# 1. Run the setup script
+./docker-start.sh
+
+# 2. Access the application
+open http://localhost:3000
+```
+
+The script will:
+- Create `.env.docker` from template
+- Guide you through generating required secrets
+- Build and start all services (app + PostgreSQL)
+
+### Manual Docker Setup
+
+```sh
+# 1. Copy environment template
+cp .env.docker.example .env.docker
+
+# 2. Generate secrets
+openssl rand -base64 32  # For NEXTAUTH_SECRET
+openssl rand -hex 32     # For ENCRYPTION_KEY
+
+# 3. Edit .env.docker with your secrets
+
+# 4. Start services
+docker-compose --env-file .env.docker up -d
+
+# 5. View logs
+docker-compose logs -f
+```
+
+See [DOCKER.md](DOCKER.md) for detailed Docker documentation, troubleshooting, and production deployment.
+
+---
+
+## Local Development Installation
 
 ### 1. Clone the repository
 
