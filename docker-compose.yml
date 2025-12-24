@@ -41,6 +41,7 @@ services:
       # NextAuth
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      AUTH_TRUST_HOST: "true"
       
       # Encryption
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
