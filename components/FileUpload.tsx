@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Upload, X, Plus, RefreshCw, FileText, File, FileImage, FileAudio } from 'lucide-react';
-import type { FileSearchStore, FileUploadStatus, ChunkingConfig, CustomMetadata } from '@/types';
+import { Upload, X, FileText, AlertCircle, Loader2, CheckCircle, Settings, Info } from 'lucide-react';
+import type { FileSearchStore, ChunkingConfig, CustomMetadata, FileUploadStatus } from '@/types';
+import { formatFileSize } from '@/lib/utils';
 import { uploadFile } from '@/lib/api';
 
 interface FileUploadProps {
@@ -23,21 +24,16 @@ const getFileIcon = (fileName: string) => {
     case 'png':
     case 'gif':
     case 'webp':
-      return FileImage;
+      return FileText; // Changed to FileText as FileImage was removed
     case 'mp3':
     case 'wav':
     case 'ogg':
-      return FileAudio;
+      return FileText; // Changed to FileText as FileAudio was removed
     default:
-      return File;
+      return FileText; // Changed to FileText as File was removed
   }
 };
 
-const formatFileSize = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
 
 export default function FileUpload({ store, onClose }: FileUploadProps) {
   const [files, setFiles] = useState<File[]>([]);
@@ -213,8 +209,8 @@ export default function FileUpload({ store, onClose }: FileUploadProps) {
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
           className={`relative w-full px-6 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${isDragging
-              ? 'drop-zone-active border-[#b82c3b]'
-              : 'border-gray-600 hover:border-[#b82c3b]/60 hover:bg-[#333]/50'
+            ? 'drop-zone-active border-[#b82c3b]'
+            : 'border-gray-600 hover:border-[#b82c3b]/60 hover:bg-[#333]/50'
             }`}
         >
           <input

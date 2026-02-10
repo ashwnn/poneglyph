@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Upload, RefreshCw, Info, X, HardDrive, FileText } from 'lucide-react';
+import { Trash2, AlertCircle, FileText, Database, X, Loader2, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { FileSearchStore } from '@/types';
+import { FileSearchStore } from '@/types';
+import { formatFileSize } from '@/lib/utils';
 import { listStores, createStore } from '@/lib/api';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -20,16 +21,6 @@ interface FileInStore {
   mimeType?: string;
 }
 
-const formatFileSize = (sizeBytes?: string | number) => {
-  if (!sizeBytes) return 'Unknown';
-  const bytes = typeof sizeBytes === 'string' ? parseInt(sizeBytes) : sizeBytes;
-  if (isNaN(bytes)) return 'Unknown';
-
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-};
 
 export default function StoreManagement({
   selectedStoreNames,
