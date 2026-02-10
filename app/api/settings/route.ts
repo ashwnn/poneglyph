@@ -1,73 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { withGeminiAuth } from '@/lib/api-helpers';
 import { prisma } from '@/lib/prisma';
+import { parseSettings } from '@/lib/settings';
 
-export async function GET() {
-  try {
-    const session = await auth();
+export const GET = withGeminiAuth(async (request: NextRequest, { session }) => {
+  let settings = await prisma.userSettings.findUnique({
+    where: { userId: session.user.id },
+  });
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    let settings = await prisma.userSettings.findUnique({
-      where: { userId: session.user.id },
-    });
-
-    if (!settings) {
-      // Verify user exists before creating settings
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-      });
-
-      if (!user) {
-        return NextResponse.json(
-          { error: 'User does not exist. Please sign in again.' },
-          { status: 401 }
-        );
-      }
-
-      // Create default settings
-      settings = await prisma.userSettings.create({
-        data: {
-          userId: session.user.id,
-          globalInstructions: '',
-          defaultModel: 'gemini-2.5-flash',
-          preferShorterAnswers: false,
-          enableCitations: true,
-          showAdvancedControls: false,
-          theme: 'light',
-        },
-      });
-    }
-
-    return NextResponse.json(settings);
-  } catch (error: any) {
-    console.error('Error fetching settings:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to fetch settings' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const data = await request.json();
-
-    // Verify user exists before upserting settings
+  if (!settings) {
+    // Verify user exists before creating settings
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
     });
@@ -79,22 +21,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const settings = await prisma.userSettings.upsert({
-      where: { userId: session.user.id },
-      update: data,
-      create: {
+    // Create default settings
+    settings = await prisma.userSettings.create({
+      data: {
         userId: session.user.id,
-        ...data,
+        ...parseSettings({}),
       },
     });
-
-    return NextResponse.json(settings);
-  } catch (error: any) {
-    console.error('Error saving settings:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to save settings' },
-      { status: 500 }
-    );
   }
-}
+
+  return NextResponse.json(settings);
+});
+
+export const POST = withGeminiAuth(async (request: NextRequest, { session }) => {
+  const rawData = await request.json();
+  const settings = parseSettings(rawData);
+
+  // Whitelist known fields to prevent injection
+  const {
+    globalInstructions,
+    defaultModel,
+    preferShorterAnswers,
+    enableCitations,
+    defaultChunking,
+    defaultMetadataPresets,
+    theme,
+    showAdvancedControls
+  } = settings;
+
+  const upsertData = {
+    globalInstructions,
+    defaultModel,
+    preferShorterAnswers,
+    enableCitations,
+    defaultChunking: defaultChunking as any, // Prisma relies on JSON
+    defaultMetadataPresets: defaultMetadataPresets as any,
+    theme,
+    showAdvancedControls
+  };
+
+  const savedSettings = await prisma.userSettings.upsert({
+    where: { userId: session.user.id },
+    update: upsertData,
+    create: {
+      userId: session.user.id,
+      ...upsertData,
+    },
+  });
+
+  return NextResponse.json(savedSettings);
+});
 
